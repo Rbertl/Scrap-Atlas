@@ -23,8 +23,7 @@ class SeleniumManager:
         chrome_options = Options()
 
         # ADICIONADO: Remove o aviso "O Chrome está sendo controlado por um software de teste automatizado"
-        chrome_options.add_experimental_option(
-            "excludeSwitches", ["enable-automation"])
+        chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
 
         if headless:
             chrome_options.add_argument("--headless")
@@ -43,7 +42,7 @@ class SeleniumManager:
             "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
 
         # O webdriver-manager baixa e gerencia o chromedriver automaticamente
-        service = ChromeService(ChromeDriverManager().install())
+        service = ChromeService('components/chromedriver.exe')
 
         # Inicializa o driver do Chrome. O driver fica acessível através de self.driver
         self.driver = webdriver.Chrome(service=service, options=chrome_options)

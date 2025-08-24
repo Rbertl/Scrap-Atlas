@@ -18,39 +18,39 @@ def fazer_login(driver: WebDriver):
     :return: True se o login for bem-sucedido, False caso contrário.
     """
     try:
-        # 1. Acessa a URL de login
         login_url = "https://atlaseletro.my.site.com/NewAuthorizedCommunity/s/login/"
         print(f"Acessando a URL de login: {login_url}")
         driver.get(login_url)
 
-        # Define um tempo de espera explícito
         wait = WebDriverWait(driver, 20)
 
-        # 2. Preenche o campo de login usando o novo XPath
         print("Aguardando campo de login...")
-        # O seletor aponta para o container, então buscamos o elemento 'input' dentro dele.
         campo_login = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="sfdc_username_container"]//input')))
         campo_login.send_keys("11300964000171@atlas.ind.br")
         print("Campo de login preenchido.")
 
-        # 3. Preenche o campo de senha usando o novo XPath
-        # O seletor aponta para o container, então buscamos o elemento 'input' dentro dele.
         campo_senha = driver.find_element(By.XPATH, '//*[@id="sfdc_password_container"]//input')
         campo_senha.send_keys("Maq@123Bh")
         print("Campo de senha preenchido.")
 
-        # 4. Pressiona o botão de login
         print("Procurando o botão de login...")
-        # Usando um seletor robusto para o botão, baseado no texto visível.
         botao_login = driver.find_element(By.XPATH, '//*[@id="centerPanel"]/div/div[2]/div/div[2]/div/div[3]/button')
         botao_login.click()
         print("Botão de login pressionado.")
 
-        # 5. Aguarda a página carregar após o login
-        print("Aguardando carregamento da página após o login...")
-        wait.until(EC.url_contains("s/"))
+        # #######################################################################
+        # ### ALTERAÇÃO PRINCIPAL AQUI ###
+        # Agora esperamos pela mensagem de boas-vindas que você indicou.
+        # #######################################################################
+        print("Aguardando carregamento da página principal...")
         
-        print("\nLogin realizado com sucesso no driver existente!")
+        # Seletor que procura por QUALQUER elemento (*) que contenha o texto de boas-vindas.
+        seletor_bem_vindo = (By.XPATH, "//*[contains(text(), 'Seja Bem-vindo a nova Comunidade da ATLAS ELETRODOMÉSTICOS!')]")
+        
+        # O script vai pausar aqui até que o elemento com o texto esteja VISÍVEL na tela.
+        wait.until(EC.visibility_of_element_located(seletor_bem_vindo))
+        
+        print("\nLogin realizado com sucesso e página principal totalmente carregada!")
         return True
 
     except Exception as e:
