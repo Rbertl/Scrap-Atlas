@@ -1,61 +1,64 @@
-import os  # <-- NOVO: Importa o módulo 'os' para interagir com o sistema
+import os
+import time
 from config_selenium import SeleniumManager
 from login.login import fazer_login
-from dados.extrair_dados import obter_dados_para_pesquisa
+from dados.extrair_dados import obter_dados_para_pesquisa, salvar_dados_pesquisados
 from pesquisa.pesquisa import realizar_pesquisas
-import time
+from interface_usuario import selecionar_arquivo_planilha  # <-- NOVO IMPORT
 
-# =================================================================
-# ### NOVA FUNÇÃO PARA LIMPAR O TERMINAL ###
-# =================================================================
 def limpar_terminal():
-    """
-    Limpa o console do terminal, compatível com Windows, Linux e macOS.
-    """
-    # Se o sistema operacional for Windows ('nt'), executa 'cls'
+    # ... (função sem alterações) ...
     if os.name == 'nt':
         os.system('cls')
-    # Senão (para Linux e macOS, 'posix'), executa 'clear'
     else:
         os.system('clear')
-# =================================================================
 
 def iniciar_automacao():
     """
     Função principal que orquestra todo o processo de automação.
     """
-    # ### ALTERAÇÃO 1: MODO HEADLESS ###
-    # Alterado para True para rodar sem abrir a janela do navegador.
+    # ### ALTERAÇÃO PRINCIPAL: SELEÇÃO DE ARQUIVO ###
+    # Chama a interface gráfica para o usuário escolher a planilha
+    caminho_planilha = selecionar_arquivo_planilha()
+    
+    # Se o usuário não selecionar um arquivo, encerra o script
+    if not caminho_planilha:
+        print("\nNenhum arquivo selecionado. Encerrando o programa.")
+        return
+
+    print(f"Arquivo selecionado: {caminho_planilha}")
+    time.sleep(2) # Pequena pausa para o usuário ler o caminho
+    limpar_terminal()
+
+    print("--- INICIANDO AUTOMAÇÃO ATLAS ELETRODOMÉSTICOS ---")
+    
     manager = SeleniumManager(headless=True)
     driver = manager.driver
     
     try:
-        # ETAPA 1: Executar o processo de login
         login_bem_sucedido = fazer_login(driver)
         
         if login_bem_sucedido:
-            # ETAPA 2.1: Obter a lista de dados para pesquisar
-            dados_a_pesquisar = obter_dados_para_pesquisa()
+            # Passa o caminho do arquivo para a função de leitura
+            dados_a_pesquisar = obter_dados_para_pesquisa(caminho_planilha)
             
-            # ETAPA 2.2: Iniciar o loop de pesquisas com os dados obtidos
-            realizar_pesquisas(driver, dados_a_pesquisar)
+            if dados_a_pesquisar:
+                resultados_finais = realizar_pesquisas(driver, dados_a_pesquisar)
+                
+                # Passa os resultados e o caminho para a função de salvar
+                salvar_dados_pesquisados(resultados_finais, caminho_planilha)
 
             print("\nAutomação concluída com sucesso!")
-            time.sleep(2)
-
+            time.sleep(3)
         else:
             print("\nO login falhou. O script não pode continuar e será encerrado.")
+            time.sleep(3)
 
     except Exception as e:
         print(f"Ocorreu um erro inesperado na automação principal: {e}")
     finally:
         manager.close_driver()
 
-# Ponto de entrada do script principal
 if __name__ == "__main__":
-    # ### ALTERAÇÃO 2: CHAMADA DA FUNÇÃO ###
-    # Limpa o terminal logo no início da execução
     limpar_terminal()
-    
-    print("--- INICIANDO AUTOMAÇÃO ATLAS ELETRODOMÉSTICOS ---")
     iniciar_automacao()
