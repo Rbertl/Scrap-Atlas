@@ -16,8 +16,6 @@ opcoes = [
     # Adiciona a pasta de componentes (com o chromedriver.exe) ao pacote
     '--add-data=%s' % 'components;components',
     
-    # Adiciona a pasta de ícones (com os .png) ao pacote
-    '--add-data=%s' % 'icons;icons',
 ]
 
 # Adiciona o ícone ao .exe, se o arquivo existir
