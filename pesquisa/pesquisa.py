@@ -3,66 +3,70 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
-
-def realizar_pesquisas(driver: WebDriver, lista_de_dados: list):
+# ARQUIVO PARA COLETAR MODELO PELA SERIE
+# A função agora aceita o 'log_callback' como um parâmetro
+# A função agora aceita o 'cancel_event'
+def realizar_pesquisas(driver: WebDriver, lista_de_dados: list, log_callback=print, cancel_event=None):
     """
-    Navega, realiza uma pesquisa e retorna os resultados coletados.
+    Navega, realiza uma pesquisa e retorna os resultados coletados, verificando
+    o sinal de cancelamento a cada iteração.
     """
-    print("\n--- INICIANDO PROCESSO DE PESQUISA ---")
+    log_callback("\n--- INICIANDO PROCESSO DE PESQUISA ---")
+    # ... (código da função sem alterações até o loop) ...
     url_base = "https://atlaseletro.my.site.com/NewAuthorizedCommunity/s/global-search/"
     wait = WebDriverWait(driver, 20)
-    
-    # Lista para armazenar os resultados
     resultados_coletados = []
 
     for dado in lista_de_dados:
-        texto_final = "Não encontrado" # Valor padrão
+        # ### VERIFICAÇÃO DE CANCELAMENTO ###
+        # A primeira coisa que o loop faz é checar o sinal.
+        if cancel_event and cancel_event.is_set():
+            log_callback("!!! PROCESSO CANCELADO PELO USUÁRIO !!!")
+            break # Interrompe o loop 'for' imediatamente
+
+        texto_final = "Não encontrado"
         try:
-            # ... (lógica de navegação e clique continua a mesma) ...
+            # ... (toda a lógica de pesquisa, clique e extração continua a mesma) ...
             url_pesquisa = url_base + str(dado)
-            print(f"\n[LOOP] Pesquisando por: {dado}")
-            print(f"       Navegando para: {url_pesquisa}")
+            log_callback(f"\n[LOOP] Pesquisando por: {dado}")
+            log_callback(f"       Navegando para: {url_pesquisa}")
             driver.get(url_pesquisa)
             seletor_resultado_link = (By.XPATH, f"//a[normalize-space()='{dado}']")
             seletor_sem_resultado = (By.XPATH, "//*[contains(text(), 'Nenhum resultado')]")
-            print("       Aguardando resultado da pesquisa...")
+            log_callback("       Aguardando resultado da pesquisa...")
             wait.until(
                 lambda d: d.find_elements(*seletor_resultado_link) or d.find_elements(*seletor_sem_resultado)
             )
-            print("       Página de pesquisa carregada.")
+            log_callback("       Página de pesquisa carregada.")
             links_encontrados = driver.find_elements(*seletor_resultado_link)
 
             if links_encontrados:
-                # ... (lógica de clique e espera da página de detalhes continua a mesma) ...
-                print("       Resultado correspondente encontrado! Clicando no link.")
+                log_callback("       Resultado correspondente encontrado! Clicando no link.")
                 links_encontrados[0].click()
-                print("       Aguardando carregamento da página de detalhes...")
+                log_callback("       Aguardando carregamento da página de detalhes...")
                 seletor_confirmacao = (By.XPATH, "//*[@field-label='Produto']")
                 wait.until(EC.visibility_of_element_located(seletor_confirmacao))
-                print("       Página de detalhes carregada.")
+                log_callback("       Página de detalhes carregada.")
 
                 try:
-                    # Lógica de extração do primeiro resultado com 'FOGAO'
                     seletor_primeiro_fogao = (By.XPATH, "//*[contains(text(), 'FOGAO')]")
                     primeiro_elemento = wait.until(EC.visibility_of_element_located(seletor_primeiro_fogao))
                     texto_extraido = primeiro_elemento.text.strip()
                     if texto_extraido:
-                        print(f"       >>> Primeiro resultado encontrado: {texto_extraido}")
-                        texto_final = texto_extraido # Atualiza o valor a ser salvo
+                        log_callback(f"       >>> Primeiro resultado encontrado: {texto_extraido}")
+                        texto_final = texto_extraido
                 except Exception as e_extracao:
-                    print(f"       !!! Nenhum dado contendo 'FOGAO' foi encontrado na página.")
+                    log_callback(f"       !!! Nenhum dado contendo 'FOGAO' foi encontrado na página.")
                     texto_final = "FOGAO não encontrado"
             else:
-                print("       'Nenhum resultado' encontrado para este item.")
+                log_callback("       'Nenhum resultado' encontrado para este item.")
                 texto_final = "Item não localizado"
         except Exception as e:
-            print(f"       !!! Ocorreu um erro ao pesquisar o item '{dado}': {e}")
-            texto_final = f"Erro: {e}"
+            log_callback(f"       !!! Ocorreu um erro ao pesquisar o item '{dado}': {e}")
+            texto_final = f"Erro no processamento"
         
-        # Adiciona o resultado (sucesso ou falha) à nossa lista
         resultados_coletados.append({'Serie': dado, 'Modelo': texto_final})
-        print(f"[LOOP] Ações para '{dado}' concluídas.")
+        log_callback(f"[LOOP] Ações para '{dado}' concluídas.")
     
-    print("\n--- PROCESSO DE PESQUISA FINALIZADO ---")
-    # Retorna a lista completa de resultados
+    log_callback("\n--- PROCESSO DE PESQUISA FINALIZADO ---")
     return resultados_coletados
