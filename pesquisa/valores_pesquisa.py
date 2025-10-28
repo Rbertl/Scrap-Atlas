@@ -60,12 +60,12 @@ def realizar_pesquisa_valores(driver: WebDriver, lista_de_dados: list, log_callb
                 
                 campo_codigo.clear()
                 # Pausa mínima antes de enviar as chaves
-                time.sleep(0.2) 
+                time.sleep(0.3) 
                 campo_codigo.send_keys(dado)
                 log_callback(f"       Código '{dado}' inserido.")
                 
                  # Pausa mínima antes de clicar fora
-                time.sleep(0.3)
+                time.sleep(0.4)
                 div_confirmacao = driver.find_element(*seletor_div_confirmacao)
                 ActionChains(driver).move_to_element(div_confirmacao).click().perform()
                 log_callback("       Clicado fora do campo para iniciar a busca.")
@@ -81,7 +81,7 @@ def realizar_pesquisa_valores(driver: WebDriver, lista_de_dados: list, log_callb
                 )
                 
                 # Pausa extra opcional após a espera ser satisfeita, caso a UI ainda esteja atualizando
-                time.sleep(0.8) 
+                time.sleep(0.9) 
                 # --- FIM DA ALTERAÇÃO NA ESPERA ---
                 
                 # Coletar descrição e valor
@@ -90,7 +90,20 @@ def realizar_pesquisa_valores(driver: WebDriver, lista_de_dados: list, log_callb
                 
                 # Coleta o valor usando o XPath modificado
                 campo_valor = driver.find_element(*input_valor_locator) 
-                valor_peca = campo_valor.get_attribute('value').strip() 
+                valor_peca_raw = campo_valor.get_attribute('value').strip() 
+
+                # --- FORMATAÇÃO DO VALOR ---
+                try:
+                    # Tenta converter para float (assumindo ponto decimal na coleta)
+                    valor_float = float(valor_peca_raw)
+                    # Formata para duas casas decimais e substitui ponto por vírgula
+                    valor_peca = f"{valor_float:.2f}".replace('.', ',')
+                except (ValueError, TypeError):
+                    # Se a conversão falhar (valor não numérico ou vazio), mantém o valor bruto como resultado
+                    log_callback(f"       Aviso: Não foi possível formatar o valor '{valor_peca_raw}' como moeda BRL.")
+                    valor_peca = valor_peca_raw # Mantém o valor original (pode ser "", "Não encontrado", etc.)
+                # --- FIM DA FORMATAÇÃO ---
+
 
                 if not descricao_peca or not valor_peca: # Verifica se algum ficou vazio
                     if not descricao_peca: descricao_peca = "Descrição vazia"
