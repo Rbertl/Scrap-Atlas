@@ -1,7 +1,7 @@
 # Importa as bibliotecas necessárias
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
-# A linha do webdriver-manager foi removida, pois não é mais necessária
+from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
 
 
@@ -17,13 +17,14 @@ class SeleniumManager:
         """
         # Armazena a função de log para ser usada em outros métodos
         self.log_callback = log_callback
-        
+
         chrome_options = Options()
 
         # Opções que já estavam corretas
-        chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
+        chrome_options.add_experimental_option(
+            'excludeSwitches', ['enable-logging'])
         chrome_options.add_argument('--log-level=3')
-        
+
         if headless:
             chrome_options.add_argument("--headless")
 
@@ -39,15 +40,31 @@ class SeleniumManager:
         # Usa o caminho local para o chromedriver.exe que você colocou na pasta 'components'.
         # =================================================================
         try:
-            service = ChromeService('components/chromedriver.exe')
-            
-            self.driver = webdriver.Chrome(service=service, options=chrome_options)
-            # Usa o log_callback em vez de print para se comunicar com a interface
-            self.log_callback("WebDriver do Chrome (local) inicializado.")
+            self.log_callback(
+                "Iniciando WebDriver: Verificando/Baixando o ChromeDriver...")
+
+            # Esta é a linha principal:
+            # 1. Detecta a versão do seu Chrome.
+            # 2. Baixa o chromedriver.exe compatível, se necessário.
+            # 3. Retorna o caminho para o executável baixado.
+            driver_path = ChromeDriverManager().install()
+
+            # Usa o caminho retornado pelo webdriver-manager
+            service = ChromeService(driver_path)
+
+            self.driver = webdriver.Chrome(
+                service=service, options=chrome_options)
+            self.log_callback(
+                "WebDriver do Chrome (gerenciado automaticamente) inicializado com sucesso.")
+
         except Exception as e:
-            self.log_callback(f"!!! ERRO ao inicializar o WebDriver local: {e}")
-            self.log_callback("    Verifique se o arquivo 'chromedriver.exe' está na pasta 'components' e se a versão é compatível com seu navegador Chrome.")
-            self.driver = None # Garante que o driver é None se falhar
+            # Atualiza a mensagem de erro para refletir o novo método
+            self.log_callback(
+                f"!!! ERRO ao inicializar o WebDriver automático: {e}")
+            self.log_callback("    Verifique sua conexão com a internet.")
+            self.log_callback(
+                "    Certifique-se de que o Chrome está instalado e que o 'webdriver-manager' tem permissão para baixar arquivos.")
+            self.driver = None  # Garante que o driver é None se falhar}
 
     def close_driver(self):
         """
